@@ -1,6 +1,7 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const AudioResult = require('./models/AudioResult');
+const VideoResult = require('./models/VideoResult');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -62,6 +63,47 @@ app.post('/callback/audio/results', async (req, res) => {
   }
 });
 
+// POST endpoint to receive video callbacks
+app.post('/callback/video/results', async (req, res) => {
+  try {
+    const { requestId, btId, message, riskLevel } = req.body;
+
+    // Validate required fields
+    if (!requestId || !btId || !message || !riskLevel) {
+      return res.status(400).json({
+        error: 'Missing required fields',
+        required: ['requestId', 'btId', 'message', 'riskLevel']
+      });
+    }
+
+    // Create and save the video result
+    const videoResult = new VideoResult({
+      requestId,
+      btId,
+      message,
+      riskLevel
+    });
+
+    await videoResult.save();
+
+    console.log('Video result saved:', videoResult._id);
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: 'Video result saved successfully',
+      id: videoResult._id
+    });
+
+  } catch (error) {
+    console.error('Error saving video result:', error);
+    res.status(500).json({
+      error: 'Failed to save video result',
+      details: error.message
+    });
+  }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.status(200).json({
@@ -73,7 +115,8 @@ app.get('/health', (req, res) => {
 // Start server
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`Callback endpoint: http://localhost:${PORT}/callback/audio/results`);
+  console.log(`Audio Results callback endpoint: http://localhost:${PORT}/callback/audio/results`);
+  console.log(`Video Results callback endpoint: http://localhost:${PORT}/callback/video/results`);
 });
 
 // Handle graceful shutdown
