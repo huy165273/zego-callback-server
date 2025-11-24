@@ -45,7 +45,7 @@ app.post('/callback/audio/results', async (req, res) => {
 
     await audioResult.save();
 
-    console.log('Audio result saved:', audioResult._id);
+    console.log('Audio result saved:', audioResult.btId);
 
     // Send success response
     res.status(200).json({
@@ -86,7 +86,7 @@ app.post('/callback/video/results', async (req, res) => {
 
     await videoResult.save();
 
-    console.log('Video result saved:', videoResult._id);
+    console.log('Video result saved:', videoResult.btId);
 
     // Send success response
     res.status(200).json({
