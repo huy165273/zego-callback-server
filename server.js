@@ -10,7 +10,8 @@ const PORT = process.env.PORT || 3000;
 const MONGODB_URI = 'mongodb+srv://kienpham1392004:1392004kien@cluster0.byk8u.mongodb.net/audio-moderation-results?retryWrites=true&w=majority&appName=Cluster0';
 
 // Middleware
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Connect to MongoDB
 mongoose.connect(MONGODB_URI)
@@ -45,7 +46,7 @@ app.post('/callback/audio/results', async (req, res) => {
 
     await audioResult.save();
 
-    console.log('Audio result saved:', audioResult.btId);
+    console.log('Audio result saved:', audioResult.btId, audioResult.riskLevel);
 
     // Send success response
     res.status(200).json({
@@ -86,7 +87,7 @@ app.post('/callback/video/results', async (req, res) => {
 
     await videoResult.save();
 
-    console.log('Video result saved:', videoResult.btId);
+    console.log('Video result saved:', videoResult.btId, videoResult.riskLevel);
 
     // Send success response
     res.status(200).json({
