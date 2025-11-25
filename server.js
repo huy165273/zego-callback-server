@@ -67,27 +67,29 @@ app.post('/callback/audio/results', async (req, res) => {
 // POST endpoint to receive video callbacks
 app.post('/callback/video/results', async (req, res) => {
   try {
-    const { requestId, btId, message, riskLevel } = req.body;
+    // Log toàn bộ request body
+    console.log('\n=== Received Video Callback ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+    console.log('================================\n');
 
-    // Validate required fields
-    if (!requestId || !btId || !message || !riskLevel) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        required: ['requestId', 'btId', 'message', 'riskLevel']
-      });
-    }
+    const { requestId, btId, riskLevel } = req.body;
 
-    // Create and save the video result
+    // Create and save the video result với toàn bộ raw data
     const videoResult = new VideoResult({
-      requestId,
-      btId,
-      message,
-      riskLevel
+      requestId: requestId || 'unknown',
+      btId: btId || 'unknown',
+      riskLevel: riskLevel || 'unknown',
+      rawData: req.body // Lưu toàn bộ request body
     });
 
     await videoResult.save();
 
-    console.log('Video result saved:', videoResult.btId, videoResult.riskLevel);
+    console.log('Video result saved successfully');
+    console.log('- ID:', videoResult._id);
+    console.log('- RequestId:', videoResult.requestId);
+    console.log('- BtId:', videoResult.btId);
+    console.log('- RiskLevel:', videoResult.riskLevel);
 
     // Send success response
     res.status(200).json({
