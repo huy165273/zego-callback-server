@@ -1,64 +1,40 @@
 const express = require('express');
-const mongoose = require('mongoose');
-const AudioResult = require('./models/AudioResult');
-const VideoResult = require('./models/VideoResult');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-
-// MongoDB connection URI
-const MONGODB_URI = 'mongodb+srv://kienpham1392004:1392004kien@cluster0.byk8u.mongodb.net/audio-moderation-results?retryWrites=true&w=majority&appName=Cluster0';
 
 // Middleware
 app.use(express.json({ limit: '100mb' }));
 app.use(express.urlencoded({ limit: '100mb', extended: true }));
 
-// Connect to MongoDB
-mongoose.connect(MONGODB_URI)
-  .then(() => {
-    console.log('Connected to MongoDB successfully');
-  })
-  .catch((err) => {
-    console.error('MongoDB connection error:', err);
-    process.exit(1);
-  });
-
 // POST endpoint to receive audio callbacks
 app.post('/callback/audio/results', async (req, res) => {
   try {
+    // Log toàn bộ request body
+    console.log('\n=== Received Audio Callback ===');
+    console.log('Timestamp:', new Date().toISOString());
+    console.log('Request Body:', JSON.stringify(req.body, null, 2));
+    console.log('================================\n');
+
     const { requestId, btId, message, riskLevel } = req.body;
 
-    // Validate required fields
-    if (!requestId || !btId || !message || !riskLevel) {
-      return res.status(400).json({
-        error: 'Missing required fields',
-        required: ['requestId', 'btId', 'message', 'riskLevel']
-      });
-    }
-
-    // Create and save the audio result
-    const audioResult = new AudioResult({
-      requestId,
-      btId,
-      message,
-      riskLevel
-    });
-
-    await audioResult.save();
-
-    console.log('Audio result saved:', audioResult.btId, audioResult.riskLevel);
+    // Log các trường quan trọng
+    console.log('Audio Callback Details:');
+    console.log('- RequestId:', requestId);
+    console.log('- BtId:', btId);
+    console.log('- Message:', message);
+    console.log('- RiskLevel:', riskLevel);
 
     // Send success response
     res.status(200).json({
       success: true,
-      message: 'Audio result saved successfully',
-      id: audioResult._id
+      message: 'Audio callback received successfully'
     });
 
   } catch (error) {
-    console.error('Error saving audio result:', error);
+    console.error('Error processing audio callback:', error);
     res.status(500).json({
-      error: 'Failed to save audio result',
+      error: 'Failed to process audio callback',
       details: error.message
     });
   }
@@ -75,33 +51,22 @@ app.post('/callback/video/results', async (req, res) => {
 
     const { requestId, btId, riskLevel } = req.body;
 
-    // Create and save the video result với toàn bộ raw data
-    const videoResult = new VideoResult({
-      requestId: requestId || 'unknown',
-      btId: btId || 'unknown',
-      riskLevel: riskLevel || 'unknown',
-      rawData: req.body // Lưu toàn bộ request body
-    });
-
-    await videoResult.save();
-
-    console.log('Video result saved successfully');
-    console.log('- ID:', videoResult._id);
-    console.log('- RequestId:', videoResult.requestId);
-    console.log('- BtId:', videoResult.btId);
-    console.log('- RiskLevel:', videoResult.riskLevel);
+    // Log các trường quan trọng
+    console.log('Video Callback Details:');
+    console.log('- RequestId:', requestId);
+    console.log('- BtId:', btId);
+    console.log('- RiskLevel:', riskLevel);
 
     // Send success response
     res.status(200).json({
       success: true,
-      message: 'Video result saved successfully',
-      id: videoResult._id
+      message: 'Video callback received successfully'
     });
 
   } catch (error) {
-    console.error('Error saving video result:', error);
+    console.error('Error processing video callback:', error);
     res.status(500).json({
-      error: 'Failed to save video result',
+      error: 'Failed to process video callback',
       details: error.message
     });
   }
@@ -123,8 +88,7 @@ app.listen(PORT, () => {
 });
 
 // Handle graceful shutdown
-process.on('SIGINT', async () => {
+process.on('SIGINT', () => {
   console.log('\nShutting down gracefully...');
-  await mongoose.connection.close();
   process.exit(0);
 });
