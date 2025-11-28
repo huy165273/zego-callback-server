@@ -70,7 +70,189 @@ Kiểm tra trạng thái server.
 }
 ```
 
-## Triển khai Docker với Domain
+## Triển khai lên Render (Khuyến nghị - Đơn giản nhất)
+
+### Tại sao chọn Render?
+- ✅ Miễn phí (Free tier)
+- ✅ Tự động SSL/HTTPS
+- ✅ Tự động deploy khi push code
+- ✅ Không cần quản lý server
+- ✅ Có subdomain miễn phí hoặc dùng custom domain
+
+### Bước 1: Push code lên GitHub
+
+Nếu chưa có Git repository:
+
+```bash
+# Khởi tạo Git (nếu chưa có)
+git init
+
+# Add tất cả files
+git add .
+
+# Commit
+git commit -m "Initial commit"
+
+# Tạo repo trên GitHub và push
+git remote add origin https://github.com/username/zego-callback-server.git
+git branch -M main
+git push -u origin main
+```
+
+### Bước 2: Deploy lên Render
+
+1. **Đăng ký/Đăng nhập Render**
+   - Truy cập https://render.com
+   - Đăng nhập bằng GitHub account
+
+2. **Tạo Web Service mới**
+   - Click "New +" → "Web Service"
+   - Connect GitHub repository của bạn
+   - Chọn repository `zego-callback-server`
+
+3. **Cấu hình Service**
+   ```
+   Name: zego-callback-server (hoặc tên bạn muốn)
+   Region: Singapore (gần Việt Nam nhất)
+   Branch: main
+   Runtime: Node
+   Build Command: npm install
+   Start Command: npm start
+   Instance Type: Free
+   ```
+
+4. **Environment Variables** (Tùy chọn)
+   ```
+   NODE_ENV = production
+   PORT = 3000
+   ```
+
+5. **Click "Create Web Service"**
+   - Render sẽ tự động build và deploy
+   - Sau vài phút, service sẽ online với URL: `https://zego-callback-server.onrender.com`
+
+### Bước 3: Sử dụng Custom Domain (Tùy chọn)
+
+Nếu bạn muốn dùng domain riêng thay vì `.onrender.com`:
+
+1. **Trong Render Dashboard:**
+   - Vào Settings của Web Service
+   - Scroll xuống "Custom Domain"
+   - Click "Add Custom Domain"
+   - Nhập domain của bạn: `callback.your-domain.com`
+
+2. **Cấu hình DNS:**
+   - Vào trang quản lý DNS của domain (Cloudflare, GoDaddy, v.v.)
+   - Tạo CNAME record:
+     ```
+     Type: CNAME
+     Name: callback
+     Value: zego-callback-server.onrender.com
+     ```
+   - Đợi DNS propagate (5-30 phút)
+
+3. **SSL tự động:**
+   - Render tự động cấp SSL certificate miễn phí
+   - HTTPS sẽ hoạt động ngay
+
+### Bước 4: Cấu hình ZEGO Console
+
+Sau khi deploy xong, cập nhật callback URLs trong ZEGO Console:
+
+**Nếu dùng Render subdomain:**
+- Audio Callback: `https://zego-callback-server.onrender.com/callback/audio/results`
+- Video Callback: `https://zego-callback-server.onrender.com/callback/video/results`
+
+**Nếu dùng custom domain:**
+- Audio Callback: `https://callback.your-domain.com/callback/audio/results`
+- Video Callback: `https://callback.your-domain.com/callback/video/results`
+
+### Bước 5: Xem Logs
+
+**Trong Render Dashboard:**
+- Vào tab "Logs" của Web Service
+- Logs sẽ hiển thị realtime
+- Tất cả console.log sẽ xuất hiện ở đây
+
+**Hoặc dùng Render CLI:**
+```bash
+# Cài đặt Render CLI
+npm install -g @render-cli/cli
+
+# Login
+render login
+
+# Xem logs
+render logs zego-callback-server
+```
+
+### Bước 6: Test và Kiểm tra
+
+```bash
+# Test health check
+curl https://zego-callback-server.onrender.com/health
+
+# Test audio callback
+curl -X POST https://zego-callback-server.onrender.com/callback/audio/results \
+  -H "Content-Type: application/json" \
+  -d '{
+    "requestId": "test123",
+    "btId": "bt123",
+    "message": "Normal",
+    "riskLevel": "PASS"
+  }'
+
+# Kiểm tra logs trong Render Dashboard để xem output
+```
+
+### Auto Deploy
+
+Mỗi khi bạn push code mới lên GitHub, Render sẽ tự động:
+1. Phát hiện thay đổi
+2. Build lại
+3. Deploy phiên bản mới
+4. Zero downtime
+
+```bash
+# Sửa code, sau đó:
+git add .
+git commit -m "Update feature"
+git push
+
+# Render tự động deploy trong vài phút
+```
+
+### Lưu ý quan trọng với Free Tier
+
+⚠️ **Free tier của Render có giới hạn:**
+- Service sẽ "ngủ" (spin down) sau 15 phút không có traffic
+- Lần request đầu tiên sau khi ngủ sẽ mất 30-60 giây để "thức dậy"
+- Giải pháp: Nâng lên Paid plan ($7/tháng) để luôn online 24/7
+
+**Workaround cho Free tier:**
+Tạo cron job ping server mỗi 10 phút để giữ cho service không ngủ:
+- Dùng cron-job.org hoặc UptimeRobot
+- Ping endpoint: `https://zego-callback-server.onrender.com/health`
+
+### Troubleshooting
+
+**Service không start:**
+- Kiểm tra Logs trong Render Dashboard
+- Đảm bảo `package.json` có đúng scripts: `"start": "node server.js"`
+
+**Không nhận được callback:**
+- Kiểm tra URL trong ZEGO Console có đúng không
+- Xem Logs để confirm request có đến server không
+- Test bằng curl từ máy local
+
+**Domain không hoạt động:**
+- Kiểm tra CNAME record: `nslookup callback.your-domain.com`
+- Đợi thêm thời gian cho DNS propagate
+- Xóa cache DNS: `ipconfig /flushdns` (Windows) hoặc `sudo dscacheutil -flushcache` (Mac)
+
+---
+
+## Triển khai Docker với Domain (Nâng cao)
 
 ### Bước 1: Chuẩn bị VPS/Server
 
