@@ -38,3 +38,7 @@ tmp/
 *.tgz
 *.zip
 *.rar
+
+# Application logs directory
+logs/
+*.json

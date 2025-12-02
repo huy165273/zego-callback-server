@@ -7,8 +7,10 @@ Server để nhận callback từ đối tác ZEGO cho audio và video moderatio
 - ✅ Nhận callback từ ZEGO audio moderation
 - ✅ Nhận callback từ ZEGO video moderation
 - ✅ Log chi tiết tất cả callback
-- ✅ Health check endpoint
+- ✅ **Tự động lưu toàn bộ callback vào file JSON theo requestId**
+- ✅ Health check endpoint với thông tin chi tiết
 - ✅ Hỗ trợ triển khai Docker với domain tùy chỉnh
+- ✅ Hỗ trợ triển khai Render (miễn phí)
 
 ## Cài đặt và Chạy Local
 
@@ -51,13 +53,32 @@ Nhận callback từ ZEGO audio moderation và log thông tin.
 ```json
 {
   "success": true,
-  "message": "Audio callback received successfully"
+  "message": "Audio callback received successfully",
+  "savedToFile": "audio_6a9cb980346dfea41111656a514e9109_2025-12-02T10-30-00-000Z.json"
 }
 ```
+
+**Lưu ý:** Toàn bộ request body sẽ được lưu vào file JSON trong thư mục `logs/` với format:
+- Tên file: `audio_{requestId}_{timestamp}.json`
+- Ví dụ: `audio_6a9cb980346dfea41111656a514e9109_2025-12-02T10-30-00-000Z.json`
 
 ### POST /callback/video/results
 
 Nhận callback từ ZEGO video moderation và log thông tin.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "message": "Video callback received successfully",
+  "savedToFile": "video_abc123_2025-12-02T10-30-00-000Z.json"
+}
+```
+
+**Lưu ý:** Toàn bộ request body sẽ được lưu vào file JSON trong thư mục `logs/` với format:
+- Tên file: `video_{requestId}_{timestamp}.json`
+- File chứa toàn bộ dữ liệu gốc từ ZEGO, không bị cắt bởi console log
 
 ### GET /health
 
@@ -93,6 +114,55 @@ Kiểm tra trạng thái server với thông tin chi tiết.
   - `heapTotal`: Tổng bộ nhớ heap
 - `environment`: Môi trường đang chạy
 - `nodeVersion`: Phiên bản Node.js
+
+### GET /api/logs
+
+Lấy danh sách tất cả file logs đã lưu.
+
+**Response:**
+
+```json
+{
+  "success": true,
+  "count": 5,
+  "files": [
+    {
+      "filename": "video_abc123_2025-12-02T10-30-00-000Z.json",
+      "size": "12KB",
+      "created": "2025-12-02T10:30:00.000Z",
+      "modified": "2025-12-02T10:30:00.000Z"
+    },
+    {
+      "filename": "audio_xyz789_2025-12-02T10-25-00-000Z.json",
+      "size": "8KB",
+      "created": "2025-12-02T10:25:00.000Z",
+      "modified": "2025-12-02T10:25:00.000Z"
+    }
+  ]
+}
+```
+
+### GET /api/logs/:filename
+
+Lấy nội dung chi tiết của một file log cụ thể.
+
+**Ví dụ:** `GET /api/logs/video_abc123_2025-12-02T10-30-00-000Z.json`
+
+**Response:**
+
+```json
+{
+  "timestamp": "2025-12-02T10:30:00.000Z",
+  "type": "video",
+  "requestId": "abc123",
+  "data": {
+    "requestId": "abc123",
+    "btId": "1234567890",
+    "riskLevel": "PASS",
+    ... // Toàn bộ dữ liệu gốc từ ZEGO
+  }
+}
+```
 
 ## Triển khai lên Render (Khuyến nghị - Đơn giản nhất)
 
@@ -209,6 +279,48 @@ render login
 # Xem logs
 render logs zego-callback-server
 ```
+
+### Bước 6: Truy cập File Logs đã lưu
+
+**⚠️ Lưu ý quan trọng về Render:**
+
+Render free tier sử dụng **ephemeral filesystem**, nghĩa là:
+- File logs được lưu vào thư mục `logs/` trên server
+- Nhưng sẽ **bị xóa mỗi khi service restart hoặc redeploy**
+- Không thể download trực tiếp từ Render Dashboard
+
+**Giải pháp:**
+
+**Option 1: Xem logs qua Render Console Logs** (Khuyến nghị cho Free tier)
+- Console log vẫn in đầy đủ request body
+- Xem trong Render Dashboard → Logs tab
+
+**Option 2: Dùng API endpoints để đọc logs** ✅ (Đã tích hợp sẵn)
+
+Server đã có sẵn 2 API endpoints:
+
+```bash
+# Lấy danh sách tất cả log files
+curl https://zego-callback-server.onrender.com/api/logs
+
+# Lấy nội dung chi tiết của một file log
+curl https://zego-callback-server.onrender.com/api/logs/video_abc123_2025-12-02T10-30-00-000Z.json
+```
+
+Quy trình xem logs:
+1. Gọi GET `/api/logs` để lấy danh sách file
+2. Chọn file muốn xem
+3. Gọi GET `/api/logs/{filename}` để xem nội dung đầy đủ
+
+**Option 3: Nâng lên Paid plan** ($7/tháng)
+- Persistent storage
+- File logs không bị xóa
+- Có thể SSH vào server để xem file
+
+**Option 4: Chuyển sang lưu vào cloud storage**
+- AWS S3
+- Google Cloud Storage
+- Cloudflare R2 (có free tier 10GB)
 
 ### Bước 6: Test và Kiểm tra
 
