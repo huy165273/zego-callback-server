@@ -61,14 +61,38 @@ Nhận callback từ ZEGO video moderation và log thông tin.
 
 ### GET /health
 
-Kiểm tra trạng thái server.
+Kiểm tra trạng thái server với thông tin chi tiết.
+
+**Response:**
 
 ```json
 {
   "status": "ok",
-  "timestamp": "2025-11-28T10:30:00.000Z"
+  "timestamp": "2025-12-02T10:30:00.000Z",
+  "uptime": {
+    "seconds": 3665,
+    "formatted": "1h 1m 5s"
+  },
+  "memory": {
+    "rss": "45MB",
+    "heapUsed": "20MB",
+    "heapTotal": "30MB"
+  },
+  "environment": "production",
+  "nodeVersion": "v20.10.0"
 }
 ```
+
+**Mô tả các trường:**
+- `status`: Trạng thái server (ok/error)
+- `timestamp`: Thời gian hiện tại của server
+- `uptime`: Thời gian server đã chạy (giây và định dạng dễ đọc)
+- `memory`: Thông tin bộ nhớ đang sử dụng
+  - `rss`: Resident Set Size - tổng bộ nhớ
+  - `heapUsed`: Bộ nhớ heap đang dùng
+  - `heapTotal`: Tổng bộ nhớ heap
+- `environment`: Môi trường đang chạy
+- `nodeVersion`: Phiên bản Node.js
 
 ## Triển khai lên Render (Khuyến nghị - Đơn giản nhất)
 
