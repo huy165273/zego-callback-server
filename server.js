@@ -18,9 +18,7 @@ app.use(express.urlencoded({ limit: '100mb', extended: true }));
 // Helper function to save callback to file
 function saveCallbackToFile(type, requestId, data) {
   try {
-    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
-    const safeRequestId = (requestId || 'unknown').replace(/[^a-zA-Z0-9-_]/g, '_');
-    const filename = `${type}_${safeRequestId}_${timestamp}.json`;
+    const filename = `${type}_${requestId}.json`;
     const filepath = path.join(logsDir, filename);
 
     const logData = {

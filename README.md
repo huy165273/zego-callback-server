@@ -54,13 +54,14 @@ Nhận callback từ ZEGO audio moderation và log thông tin.
 {
   "success": true,
   "message": "Audio callback received successfully",
-  "savedToFile": "audio_6a9cb980346dfea41111656a514e9109_2025-12-02T10-30-00-000Z.json"
+  "savedToFile": "audio_6a9cb980346dfea41111656a514e9109.json"
 }
 ```
 
 **Lưu ý:** Toàn bộ request body sẽ được lưu vào file JSON trong thư mục `logs/` với format:
-- Tên file: `audio_{requestId}_{timestamp}.json`
-- Ví dụ: `audio_6a9cb980346dfea41111656a514e9109_2025-12-02T10-30-00-000Z.json`
+- Tên file: `audio_{requestId}.json`
+- Ví dụ: `audio_6a9cb980346dfea41111656a514e9109.json`
+- Nếu cùng requestId gửi lại sẽ ghi đè file cũ
 
 ### POST /callback/video/results
 
@@ -72,13 +73,15 @@ Nhận callback từ ZEGO video moderation và log thông tin.
 {
   "success": true,
   "message": "Video callback received successfully",
-  "savedToFile": "video_abc123_2025-12-02T10-30-00-000Z.json"
+  "savedToFile": "video_abc123.json"
 }
 ```
 
 **Lưu ý:** Toàn bộ request body sẽ được lưu vào file JSON trong thư mục `logs/` với format:
-- Tên file: `video_{requestId}_{timestamp}.json`
+- Tên file: `video_{requestId}.json`
+- Ví dụ: `video_abc123.json`
 - File chứa toàn bộ dữ liệu gốc từ ZEGO, không bị cắt bởi console log
+- Nếu cùng requestId gửi lại sẽ ghi đè file cũ
 
 ### GET /health
 
@@ -127,13 +130,13 @@ Lấy danh sách tất cả file logs đã lưu.
   "count": 5,
   "files": [
     {
-      "filename": "video_abc123_2025-12-02T10-30-00-000Z.json",
+      "filename": "video_abc123.json",
       "size": "12KB",
       "created": "2025-12-02T10:30:00.000Z",
       "modified": "2025-12-02T10:30:00.000Z"
     },
     {
-      "filename": "audio_xyz789_2025-12-02T10-25-00-000Z.json",
+      "filename": "audio_xyz789.json",
       "size": "8KB",
       "created": "2025-12-02T10:25:00.000Z",
       "modified": "2025-12-02T10:25:00.000Z"
@@ -146,7 +149,7 @@ Lấy danh sách tất cả file logs đã lưu.
 
 Lấy nội dung chi tiết của một file log cụ thể.
 
-**Ví dụ:** `GET /api/logs/video_abc123_2025-12-02T10-30-00-000Z.json`
+**Ví dụ:** `GET /api/logs/video_abc123.json`
 
 **Response:**
 
@@ -304,7 +307,7 @@ Server đã có sẵn 2 API endpoints:
 curl https://zego-callback-server.onrender.com/api/logs
 
 # Lấy nội dung chi tiết của một file log
-curl https://zego-callback-server.onrender.com/api/logs/video_abc123_2025-12-02T10-30-00-000Z.json
+curl https://zego-callback-server.onrender.com/api/logs/video_abc123.json
 ```
 
 Quy trình xem logs:
